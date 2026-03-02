@@ -6,7 +6,7 @@ from itertools import groupby
 import click
 
 from task_cli.models import Task
-from task_cli.storage import add_task, load_tasks, complete_task
+from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task
 
 
 @click.group()
@@ -60,3 +60,22 @@ def done(task_id: str):
         click.echo(f"Completed: {task.message}")
     else:
         click.echo(f"No unique task found matching '{task_id}'.")
+
+
+@main.command()
+@click.argument("task_id")
+@click.option("--yes", "-y", is_flag=True, help="Don't prompt for confirmation.")
+def delete(task_id: str, yes: bool):
+    """Delete a task by full or partial ID."""
+    task = find_task_by_id(task_id)
+    if not task:
+        click.echo(f"No unique task found matching '{task_id}'.")
+        return
+    if yes or click.confirm(f"Delete task [{task.id}] {task.message}?"):
+        deleted = delete_task(task.id)
+        if deleted:
+            click.echo(f"Deleted: {deleted.message}")
+        else:
+            click.echo("Failed to delete task.")
+    else:
+        click.echo("Aborted.")

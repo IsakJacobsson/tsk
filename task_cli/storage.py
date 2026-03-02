@@ -127,3 +127,18 @@ def complete_task(partial_id: str) -> Task | None:
         save_tasks(tasks)
         return matches[0]
     return None
+
+
+def delete_task(partial_id: str) -> Task | None:
+    """Delete a task by full or partial ID and persist changes.
+
+    Returns the deleted Task when exactly one match is found, otherwise None.
+    """
+    tasks = load_tasks()
+    matches = [t for t in tasks if t.id.startswith(partial_id)]
+    if len(matches) == 1:
+        to_delete = matches[0]
+        tasks = [t for t in tasks if t.id != to_delete.id]
+        save_tasks(tasks)
+        return to_delete
+    return None
