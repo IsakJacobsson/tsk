@@ -20,7 +20,7 @@ def add(message: str):
     """Create a new task."""
     task = Task(message=message)
     add_task(task)
-    click.echo(f"✓ Added task [{task.id}] {task.message}")
+    click.echo(f"Added task [{task.id}] {task.message}")
 
 
 @main.command("list")
@@ -57,6 +57,6 @@ def done(task_id: str):
     """Mark a task as complete by full or partial ID."""
     task = complete_task(task_id)
     if task:
-        click.echo(f"✓ Completed: {task.message}")
+        click.echo(f"Completed: {task.message}")
     else:
-        click.echo(f"✗ No unique task found matching '{task_id}'.")
+        click.echo(f"No unique task found matching '{task_id}'.")
