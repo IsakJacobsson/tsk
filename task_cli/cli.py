@@ -5,8 +5,8 @@ from itertools import groupby
 
 import click
 
-from task_cli.models import Task
-from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task
+from task_cli.models import Task, TaskStatus
+from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task, wont_do_task
 
 
 @click.group()
@@ -24,12 +24,12 @@ def add(message: str):
 
 
 @main.command("list")
-@click.option("--all", "show_all", is_flag=True, help="Show all tasks including completed.")
+@click.option("--all", "show_all", is_flag=True, help="Show all tasks including done and won't-do.")
 def list_tasks(show_all: bool):
     """Show tasks. By default only incomplete tasks are shown."""
     tasks = load_tasks()
     if not show_all:
-        tasks = [t for t in tasks if not t.completed]
+        tasks = [t for t in tasks if t.status == TaskStatus.OPEN]
 
     if not tasks:
         click.echo("No tasks.")
@@ -45,7 +45,7 @@ def list_tasks(show_all: bool):
     for date, group in groupby(tasks, key=date_key):
         click.echo(date)
         for t in group:
-            status = "[x]" if t.completed else "[ ]"
+            status = "[x]" if t.status == TaskStatus.DONE else "[-]" if t.status == TaskStatus.WONTDO else "[ ]"
             time_str = datetime.fromisoformat(t.created_at).strftime("%H:%M")
             click.echo(f"  {status} {t.id}  {t.message:<30s} {time_str}")
         click.echo()
@@ -58,6 +58,17 @@ def done(task_id: str):
     task = complete_task(task_id)
     if task:
         click.echo(f"Completed: {task.message}")
+    else:
+        click.echo(f"No unique task found matching '{task_id}'.")
+
+
+@main.command("wontdo")
+@click.argument("task_id")
+def wontdo(task_id: str):
+    """Mark a task as won't-do by full or partial ID."""
+    task = wont_do_task(task_id)
+    if task:
+        click.echo(f"Marked won't-do: {task.message}")
     else:
         click.echo(f"No unique task found matching '{task_id}'.")
 

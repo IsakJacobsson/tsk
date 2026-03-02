@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 from datetime import datetime
 
-from task_cli.models import Task
+from task_cli.models import Task, TaskStatus
 
 STORAGE_DIR = Path.home() / ".tsk"
 STORAGE_FILE = STORAGE_DIR / "tasks.md"
@@ -28,9 +28,10 @@ def load_tasks() -> list[Task]:
     while i < len(lines):
         line = lines[i].rstrip("\n")
         if line.startswith("- ["):
-            m = re.match(r"- \[( |x)\] (.*)", line)
+            m = re.match(r"- \[( |x|-)\] (.*)", line)
             if m:
-                completed = m.group(1) == "x"
+                mark = m.group(1)
+                status = TaskStatus.DONE.value if mark == "x" else TaskStatus.WONTDO.value if mark == "-" else TaskStatus.OPEN.value
                 message = m.group(2).strip()
                 id_ = ""
                 created_at = ""
@@ -42,10 +43,12 @@ def load_tasks() -> list[Task]:
                         id_ = meta[len("id:"):].strip()
                     elif meta.startswith("created_at:"):
                         created_at = meta[len("created_at:"):].strip()
+                    elif meta.startswith("status:"):
+                        status = meta[len("status:"):].strip().lower()
                     i += 1
                 tasks.append(
                     Task.from_dict(
-                        {"message": message, "id": id_, "created_at": created_at, "completed": completed}
+                        {"message": message, "id": id_, "created_at": created_at, "status": status}
                     )
                 )
                 continue
@@ -84,10 +87,11 @@ def save_tasks(tasks: list[Task]) -> None:
         parts.append(heading)
         parts.append("")
         for t in groups[key]:
-            mark = "x" if t.completed else " "
+            mark = "x" if t.status == TaskStatus.DONE else "-" if t.status == TaskStatus.WONTDO else " "
             parts.append(f"- [{mark}] {t.message}")
             parts.append(f"  id: {t.id}")
             parts.append(f"  created_at: {t.created_at}")
+            parts.append(f"  status: {t.status.value}")
             parts.append("")
 
     STORAGE_FILE.write_text("\n".join(parts))
@@ -123,7 +127,18 @@ def complete_task(partial_id: str) -> Task | None:
     tasks = load_tasks()
     matches = [t for t in tasks if t.id.startswith(partial_id)]
     if len(matches) == 1:
-        matches[0].completed = True
+        matches[0].status = TaskStatus.DONE
+        save_tasks(tasks)
+        return matches[0]
+    return None
+
+
+def wont_do_task(partial_id: str) -> Task | None:
+    """Mark a task as won't-do by full or partial ID."""
+    tasks = load_tasks()
+    matches = [t for t in tasks if t.id.startswith(partial_id)]
+    if len(matches) == 1:
+        matches[0].status = TaskStatus.WONTDO
         save_tasks(tasks)
         return matches[0]
     return None
