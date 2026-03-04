@@ -46,8 +46,7 @@ def list_tasks(show_all: bool):
         click.echo(date)
         for t in group:
             status = "[x]" if t.status == TaskStatus.DONE else "[-]" if t.status == TaskStatus.WONTDO else "[ ]"
-            time_str = datetime.fromisoformat(t.created_at).strftime("%H:%M")
-            click.echo(f"  {status} {t.id}  {t.message:<30s} {time_str}")
+            click.echo(f"  {status} {t.id}  {t.message}")
         click.echo()
 
 
