@@ -60,6 +60,14 @@ tsk wontdo e1b9d44
 tsk delete a3f8c01 --yes
 ```
 
+## Testing
+
+- **Test driven development:** Add tests before implementing anything.
+- **When to run:** The full test suite must be run every time the agent think the new tests pass.
+- **Steps to test:** Run tests with `tox`.
+- **If tests fail:** Read the test error log and try to fix fix the code.
+- **If tests pass:** Refactor code to make it more readable accroding to the principles in Clean Code book.
+
 ## Coding Guidelines
 
 - Follow the data model and file format defined in `spec.md` exactly.

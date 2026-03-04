@@ -362,3 +362,81 @@ Example: if the only task starting with `a3f` is `a3f8c01`, then `tsk done a3f` 
 |------------|-----------|---------------------|
 | `click`    | `>= 8.0`  | CLI framework       |
 | Python     | `>= 3.10` | Runtime (uses `match`-compatible type hints, `str | None`, etc.) |
+
+---
+
+## 10. Testing
+
+### 10.1 Framework
+
+Tests are written with **`pytest`** and live in a top-level `tests/` directory:
+
+```
+tests/
+├── conftest.py       # Shared fixtures: storage isolation
+├── test_models.py    # Unit tests for models.py
+├── test_storage.py   # Unit tests for storage.py
+└── test_cli.py       # Integration tests for cli.py via Click's CliRunner
+```
+
+`pytest` is listed under `[project.optional-dependencies]` in `pyproject.toml`:
+
+```toml
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+```
+
+Tests are run through **`tox`**, which manages an isolated virtual environment automatically. A `tox.ini` file at the repository root defines the test environment.
+
+Run all tests with: `tox`.  
+To run without tox: `pip install -e ".[dev]"` then `pytest`.
+
+### 10.1a Tox Configuration (`tox.ini`)
+
+```ini
+[tox]
+envlist = py
+
+[testenv]
+commands = pytest
+```
+
+- `extras = dev` installs the package together with the `[dev]` optional dependencies (pytest) into the isolated tox virtualenv.
+- `{posargs}` allows passing extra arguments to pytest (e.g. `tox -- -k test_add`).
+- `tox` is **not** listed as a project dependency; it is a developer tool installed separately (`pip install tox` or `pipx install tox`).
+
+### 10.2 Storage Isolation
+
+All tests that touch the storage layer must **not** read or write `~/.tsk/tasks.md`. Isolation is achieved by patching the module-level constants in `task_cli.storage` using `monkeypatch`:
+
+```python
+@pytest.fixture
+def isolated_storage(tmp_path, monkeypatch):
+    monkeypatch.setattr("task_cli.storage.STORAGE_DIR", tmp_path)
+    monkeypatch.setattr("task_cli.storage.STORAGE_FILE", tmp_path / "tasks.md")
+```
+
+This fixture must be used (directly or via `autouse`) in every test that invokes storage functions or CLI commands.
+
+### 10.3 CLI Testing
+
+CLI commands are tested via Click's `CliRunner`, which invokes commands in-process without spawning a subprocess:
+
+```python
+from click.testing import CliRunner
+from task_cli.cli import main
+
+def test_add_command(isolated_storage):
+    runner = CliRunner()
+    result = runner.invoke(main, ["add", "Buy groceries"])
+    assert result.exit_code == 0
+    assert "Added task" in result.output
+```
+
+### 10.4 Test Coverage Areas
+
+| Module        | What to test                                                              |
+|---------------|---------------------------------------------------------------------------|
+| `models.py`   | `generate_id` determinism; `Task.__post_init__` auto-fill; status coercion; `completed` property; `to_dict` / `from_dict` round-trip |
+| `storage.py`  | `load_tasks` parses all status markers; `save_tasks` round-trip; `add_task` ID collision handling; `find_task_by_id` prefix matching; `complete_task`, `wont_do_task`, `delete_task` mutations |
+| `cli.py`      | Each command's happy path and error path (no match, ambiguous ID, delete confirmation) |

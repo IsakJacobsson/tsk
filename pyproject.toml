@@ -9,5 +9,8 @@ description = "A simple CLI task manager"
 requires-python = ">=3.10"
 dependencies = ["click>=8.0"]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
 [project.scripts]
 tsk = "task_cli.cli:main"
