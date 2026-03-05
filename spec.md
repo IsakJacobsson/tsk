@@ -397,6 +397,8 @@ Example: if the only task starting with `a3f` is `a3f8c01`, then `tsk done a3f` 
 
 ### 10.1 Framework
 
+The full test suite is always executed when running `tox` which in turn starts `pytest` tests.
+
 Tests are written with **`pytest`** and live in a top-level `tests/` directory:
 
 ```
@@ -416,8 +418,7 @@ dev = ["pytest>=8.0"]
 
 Tests are run through **`tox`**, which manages an isolated virtual environment automatically. A `tox.ini` file at the repository root defines the test environment.
 
-Run all tests with: `tox`.  
-To run without tox: `pip install -e ".[dev]"` then `pytest`.
+Run all tests with: `tox`.
 
 ### 10.1a Tox Configuration (`tox.ini`)
 
@@ -432,6 +433,7 @@ commands = pytest
 - `extras = dev` installs the package together with the `[dev]` optional dependencies (pytest) into the isolated tox virtualenv.
 - `{posargs}` allows passing extra arguments to pytest (e.g. `tox -- -k test_add`).
 - `tox` is **not** listed as a project dependency; it is a developer tool installed separately (`pip install tox` or `pipx install tox`).
+
 
 ### 10.2 Storage Isolation
 
