@@ -330,6 +330,23 @@ Deleted: Buy groceries
 
 ---
 
+#### `tsk edit <task_id> <message>`
+
+Edit the text of an existing task without changing its `id`, `created_at`, or `status`.
+
+```
+$ tsk edit a3f8c01 "Buy tomatoes"
+Updated: Buy tomatoes
+```
+
+- `task_id` — full or unambiguous partial ID.
+- `message` — the new description for the task.
+- The command delegates to `storage.edit_task(partial_id, new_message)`.
+- If no unique match is found, prints the same error used by other commands:
+  `No unique task found matching '<id>'.`
+
+---
+
 ## 7. Partial ID Matching
 
 All commands that accept a `<task_id>` support **prefix matching**:

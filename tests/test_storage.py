@@ -214,3 +214,45 @@ class TestDeleteTask:
         remaining = st.load_tasks()
         assert len(remaining) == 1
         assert remaining[0].message == "Keep me"
+
+
+# ---------------------------------------------------------------------------
+# edit_task
+# ---------------------------------------------------------------------------
+
+
+class TestEditTask:
+    def test_edits_message(self, isolated_storage):
+        task = make_task("Original")
+        st.save_tasks([task])
+        updated = st.edit_task(task.id, "Changed")
+        assert updated is not None
+        assert updated.message == "Changed"
+        loaded = st.load_tasks()[0]
+        assert loaded.message == "Changed"
+        assert loaded.id == task.id
+        assert loaded.created_at == task.created_at
+        assert loaded.status == task.status
+
+    def test_partial_id_works(self, isolated_storage):
+        task = make_task("Partial edit")
+        st.save_tasks([task])
+        updated = st.edit_task(task.id[:4], "New")
+        assert updated is not None
+        assert updated.message == "New"
+        loaded = st.load_tasks()[0]
+        assert loaded.id == task.id
+        assert loaded.created_at == task.created_at
+        assert loaded.status == task.status
+
+    def test_returns_none_on_no_match(self, isolated_storage):
+        st.save_tasks([make_task("Task")])
+        assert st.edit_task("zzzzzzz", "X") is None
+
+    def test_returns_none_on_ambiguous(self, isolated_storage):
+        t1 = make_task("A", TaskStatus.OPEN)
+        t1.id = "0000001"
+        t2 = make_task("B", TaskStatus.OPEN)
+        t2.id = "0000002"
+        st.save_tasks([t1, t2])
+        assert st.edit_task("000000", "X") is None

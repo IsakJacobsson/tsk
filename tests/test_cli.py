@@ -169,3 +169,45 @@ class TestDeleteCommand:
         result = runner.invoke(main, ["delete", task.id[:4], "--yes"])
         assert result.exit_code == 0
         assert "Deleted" in result.output
+
+
+# ---------------------------------------------------------------------------
+# tsk edit
+# ---------------------------------------------------------------------------
+
+
+class TestEditCommand:
+    def test_edits_task_message(self, runner, isolated_storage):
+        runner.invoke(main, ["add", "Buy potatoes"])
+        task = st.load_tasks()[0]
+        result = runner.invoke(main, ["edit", task.id, "Buy tomatoes"])
+        assert result.exit_code == 0
+        assert "Updated" in result.output
+        loaded = st.load_tasks()[0]
+        assert loaded.message == "Buy tomatoes"
+        assert loaded.id == task.id
+        assert loaded.created_at == task.created_at
+        assert loaded.status == task.status
+
+    def test_partial_id_works(self, runner, isolated_storage):
+        runner.invoke(main, ["add", "Partial edit"]) 
+        task = st.load_tasks()[0]
+        result = runner.invoke(main, ["edit", task.id[:4], "Edited message"]) 
+        assert result.exit_code == 0
+        assert "Updated" in result.output
+        loaded = st.load_tasks()[0]
+        assert loaded.message == "Edited message"
+        assert loaded.id == task.id
+        assert loaded.created_at == task.created_at
+        assert loaded.status == task.status
+
+    def test_no_match_prints_error(self, runner, isolated_storage):
+        result = runner.invoke(main, ["edit", "zzzzzzz", "Whatever"]) 
+        assert "No unique task found" in result.output
+
+    def test_ambiguous_id_prints_error(self, runner, isolated_storage):
+        t1 = Task(message="A", id="0000001", created_at="2026-01-01T10:00:00")
+        t2 = Task(message="B", id="0000002", created_at="2026-01-01T10:00:01")
+        st.save_tasks([t1, t2])
+        result = runner.invoke(main, ["edit", "000000", "New"]) 
+        assert "No unique task found" in result.output

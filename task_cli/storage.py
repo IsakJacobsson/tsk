@@ -157,3 +157,18 @@ def delete_task(partial_id: str) -> Task | None:
         save_tasks(tasks)
         return to_delete
     return None
+
+
+def edit_task(partial_id: str, new_message: str) -> Task | None:
+    """Edit a task's message by full or partial ID and persist changes.
+
+    Returns the updated Task when exactly one match is found, otherwise None.
+    The task's `id`, `created_at`, and `status` are preserved.
+    """
+    tasks = load_tasks()
+    matches = [t for t in tasks if t.id.startswith(partial_id)]
+    if len(matches) == 1:
+        matches[0].message = new_message
+        save_tasks(tasks)
+        return matches[0]
+    return None

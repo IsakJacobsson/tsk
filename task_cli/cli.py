@@ -6,7 +6,7 @@ from itertools import groupby
 import click
 
 from task_cli.models import Task, TaskStatus
-from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task, wont_do_task
+from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task, wont_do_task, edit_task
 
 
 @click.group()
@@ -68,6 +68,18 @@ def wontdo(task_id: str):
     task = wont_do_task(task_id)
     if task:
         click.echo(f"Marked won't-do: {task.message}")
+    else:
+        click.echo(f"No unique task found matching '{task_id}'.")
+
+
+@main.command()
+@click.argument("task_id")
+@click.argument("message")
+def edit(task_id: str, message: str):
+    """Edit the text of an existing task by full or partial ID."""
+    task = edit_task(task_id, message)
+    if task:
+        click.echo(f"Updated: {task.message}")
     else:
         click.echo(f"No unique task found matching '{task_id}'.")
 
