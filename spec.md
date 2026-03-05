@@ -18,6 +18,8 @@ task-cli/
 │   └── storage.py          # Markdown persistence layer
 ```
 
+---
+
 ## 3. Installation
 
 ### Build system
@@ -42,6 +44,8 @@ tsk = "task_cli.cli:main"
 ```
 
 Running `pipx install .` makes the `tsk` command available globally.
+
+---
 
 ## 4. Data Model (`task_cli/models.py`)
 
@@ -108,6 +112,8 @@ def generate_id(message: str, created_at: datetime) -> str:
 - Effectively collision-free for personal task volumes.
 - Collisions are handled at the storage layer (see §5.3).
 - Example: `a3f8c01`
+
+---
 
 ## 5. Storage (`task_cli/storage.py`)
 
