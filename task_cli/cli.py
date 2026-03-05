@@ -9,7 +9,7 @@ from task_cli.models import Task, TaskStatus
 from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task, wont_do_task, edit_task
 
 
-@click.group()
+@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 def main():
     """tsk — A simple CLI task manager."""
 
@@ -24,7 +24,7 @@ def add(message: str):
 
 
 @main.command("list")
-@click.option("--all", "show_all", is_flag=True, help="Show all tasks including done and won't-do.")
+@click.option("--all", "-a", "show_all", is_flag=True, help="Show all tasks including done and won't-do.")
 def list_tasks(show_all: bool):
     """Show tasks. By default only incomplete tasks are shown."""
     tasks = load_tasks()

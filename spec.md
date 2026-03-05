@@ -216,6 +216,11 @@ Entry point callable: `task_cli.cli:main` (a `click.Group`).
 tsk [COMMAND] [OPTIONS] [ARGS]
 ```
 
+### Global options
+
+- All commands support the standard help option: `--help`.
+- A short form `-h` is also supported for convenience: `-h`, `--help`.
+
 ### 6.1 Command Reference
 
 #### `tsk add <message>`
@@ -263,7 +268,7 @@ $ tsk list
 
 | Flag    | Description                              |
 |---------|------------------------------------------|
-| `--all` | Show all tasks including done/won't-do.  |
+| `--all`, `-a` | Show all tasks including done and won't-do. |
 
 ---
 

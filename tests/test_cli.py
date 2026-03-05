@@ -13,6 +13,15 @@ def runner():
     return CliRunner()
 
 
+def test_help_short_and_long(runner):
+    result_long = runner.invoke(main, ["--help"])
+    assert result_long.exit_code == 0
+    assert "Usage:" in result_long.output
+    result_short = runner.invoke(main, ["-h"])
+    assert result_short.exit_code == 0
+    assert "Usage:" in result_short.output
+
+
 # ---------------------------------------------------------------------------
 # tsk add
 # ---------------------------------------------------------------------------
@@ -58,10 +67,11 @@ class TestListCommand:
         result = runner.invoke(main, ["list"])
         assert "Done task" not in result.output
 
-    def test_shows_done_with_all_flag(self, runner, isolated_storage):
+    @pytest.mark.parametrize("flag", ["--all", "-a"])
+    def test_shows_done_with_all_flag(self, runner, isolated_storage, flag):
         task = Task(message="Done task", status=TaskStatus.DONE)
         st.save_tasks([task])
-        result = runner.invoke(main, ["list", "--all"])
+        result = runner.invoke(main, ["list", flag])
         assert "Done task" in result.output
         assert "[x]" in result.output
 
