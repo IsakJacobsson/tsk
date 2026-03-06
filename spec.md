@@ -399,7 +399,7 @@ Example: if the only task starting with `a3f` is `a3f8c01`, then `tsk done a3f` 
 
 The full test suite is always executed when running `tox` which in turn starts `pytest` tests.
 
-Tests are written with **`pytest`** and live in a top-level `tests/` directory:
+The underlying test mechanism is **`pytest`** and live in a top-level `tests/` directory:
 
 ```
 tests/
@@ -416,9 +416,11 @@ tests/
 dev = ["pytest>=8.0"]
 ```
 
+However, pytest should never be run in itself, it is called through `tox`.
+
 Tests are run through **`tox`**, which manages an isolated virtual environment automatically. A `tox.ini` file at the repository root defines the test environment.
 
-Run all tests with: `tox`.
+All tests should always be run with command: `tox`.
 
 ### 10.1a Tox Configuration (`tox.ini`)
 
