@@ -265,6 +265,17 @@ $ tsk list
 - Groups are separated by a blank line.
 - Prints `No tasks.` if the filtered list is empty.
 
+**Minimum-prefix highlighting:**
+
+Each task's ID in the list output is coloured to indicate the shortest prefix the user needs to type to uniquely address that task:
+
+- The **minimum unique prefix** — the shortest leading substring of the ID that is not shared by any other task ID in the **full task list** (all statuses, not just the displayed subset) — is rendered without styling (plain text).
+- The **remaining characters** of the ID are rendered with **dim** styling.
+- Prefix lengths are computed against **all tasks in storage**, including done and wontdo tasks that may not currently be visible. This ensures the highlighted prefix is always valid for use with `done`, `wontdo`, `edit`, and `delete`.
+- With a single task in storage, the minimum prefix length is 1.
+
+Example: if storage contains an open task `r12rt34` and a done task `r1trsle`, the open task's minimum prefix is `r12` (3 chars), so `r12` is bold and `rt34` is dim.
+
 **Status indicators in list output:**
 
 | Output | Status  |

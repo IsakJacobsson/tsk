@@ -9,6 +9,19 @@ from task_cli.models import Task, TaskStatus
 from task_cli.storage import add_task, load_tasks, complete_task, find_task_by_id, delete_task, wont_do_task, edit_task
 
 
+def min_unique_prefix_lengths(ids: list[str]) -> dict[str, int]:
+    """Return the minimum prefix length needed to uniquely identify each ID."""
+    result = {}
+    for id in ids:
+        for k in range(1, len(id) + 1):
+            if sum(1 for other in ids if other.startswith(id[:k])) == 1:
+                result[id] = k
+                break
+        else:
+            result[id] = len(id)
+    return result
+
+
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 def main():
     """tsk — A simple CLI task manager."""
@@ -27,9 +40,8 @@ def add(message: str):
 @click.option("--all", "-a", "show_all", is_flag=True, help="Show all tasks including done and won't-do.")
 def list_tasks(show_all: bool):
     """Show tasks. By default only incomplete tasks are shown."""
-    tasks = load_tasks()
-    if not show_all:
-        tasks = [t for t in tasks if t.status == TaskStatus.OPEN]
+    all_tasks = load_tasks()
+    tasks = all_tasks if show_all else [t for t in all_tasks if t.status == TaskStatus.OPEN]
 
     if not tasks:
         click.echo("No tasks.")
@@ -37,6 +49,9 @@ def list_tasks(show_all: bool):
 
     # Sort by created_at
     tasks.sort(key=lambda t: t.created_at)
+
+    # Compute minimum unique prefix lengths against ALL tasks, including non-displayed ones
+    prefix_lengths = min_unique_prefix_lengths([t.id for t in all_tasks])
 
     # Group by date
     def date_key(t: Task) -> str:
@@ -46,7 +61,9 @@ def list_tasks(show_all: bool):
         click.echo(date)
         for t in group:
             status = "[x]" if t.status == TaskStatus.DONE else "[-]" if t.status == TaskStatus.WONTDO else "[ ]"
-            click.echo(f"  {status} {t.id}  {t.message}")
+            k = prefix_lengths.get(t.id, len(t.id))
+            formatted_id = t.id[:k] + click.style(t.id[k:], dim=True)
+            click.echo(f"  {status} {formatted_id}  {t.message}")
         click.echo()
 
 

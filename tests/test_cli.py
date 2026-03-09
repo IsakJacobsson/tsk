@@ -221,3 +221,93 @@ class TestEditCommand:
         st.save_tasks([t1, t2])
         result = runner.invoke(main, ["edit", "000000", "New"]) 
         assert "No unique task found" in result.output
+
+
+# ---------------------------------------------------------------------------
+# Minimum-prefix highlighting (tsk list)
+# ---------------------------------------------------------------------------
+
+class TestMinUniquePrefixLengths:
+    """Unit tests for the min_unique_prefix_lengths helper."""
+
+    def test_single_id_gives_prefix_one(self):
+        from task_cli.cli import min_unique_prefix_lengths
+        assert min_unique_prefix_lengths(["abc1234"]) == {"abc1234": 1}
+
+    def test_no_shared_prefix(self):
+        from task_cli.cli import min_unique_prefix_lengths
+        result = min_unique_prefix_lengths(["abc1234", "def5678"])
+        assert result["abc1234"] == 1
+        assert result["def5678"] == 1
+
+    def test_shared_first_char(self):
+        from task_cli.cli import min_unique_prefix_lengths
+        result = min_unique_prefix_lengths(["r12rt34", "r1trsle"])
+        assert result["r12rt34"] == 3   # "r12" is the unique prefix
+        assert result["r1trsle"] == 3   # "r1t" is the unique prefix
+
+    def test_long_shared_prefix(self):
+        from task_cli.cli import min_unique_prefix_lengths
+        result = min_unique_prefix_lengths(["aaaaaaa", "aaaabbb"])
+        assert result["aaaaaaa"] == 5   # "aaaaa" uniquely identifies it
+        assert result["aaaabbb"] == 5   # "aaaab" uniquely identifies it
+
+    def test_three_ids_with_varying_overlap(self):
+        from task_cli.cli import min_unique_prefix_lengths
+        ids = ["abc0001", "abd0002", "xyz0003"]
+        result = min_unique_prefix_lengths(ids)
+        assert result["abc0001"] == 3   # "abc"
+        assert result["abd0002"] == 3   # "abd"
+        assert result["xyz0003"] == 1   # "x"
+
+
+class TestListMinPrefixHighlighting:
+    """Integration tests for minimum-prefix coloring in tsk list output."""
+
+    def test_id_present_in_output(self, runner, isolated_storage):
+        task = Task(message="Hello", id="abc1234", created_at="2026-01-01T10:00:00")
+        st.save_tasks([task])
+        result = runner.invoke(main, ["list"], color=True)
+        assert result.exit_code == 0
+        # The plain prefix and dim remainder should be present in the coloured output
+        assert "a" in result.output
+        assert "\x1b[2mbc1234\x1b[0m" in result.output
+
+    def test_single_task_prefix_not_dim_tail_is_dim(self, runner, isolated_storage):
+        task = Task(message="Solo", id="abc1234", created_at="2026-01-01T10:00:00")
+        st.save_tasks([task])
+        result = runner.invoke(main, ["list"], color=True)
+        # With only one task, min prefix = 1: first char plain, rest dim
+        assert "a" in result.output
+        assert "\x1b[2mbc1234\x1b[0m" in result.output
+
+    def test_two_tasks_shared_prefix_correct_split(self, runner, isolated_storage):
+        t1 = Task(message="A", id="r12rt34", created_at="2026-01-01T10:00:00")
+        t2 = Task(message="B", id="r1trsle", created_at="2026-01-01T10:00:01")
+        st.save_tasks([t1, t2])
+        result = runner.invoke(main, ["list"], color=True)
+        # t1 min prefix = "r12" (plain), tail "rt34" dim
+        # t2 min prefix = "r1t" (plain), tail "rsle" dim
+        assert "r12" in result.output
+        assert "\x1b[2mrt34\x1b[0m" in result.output
+        assert "r1t" in result.output
+        assert "\x1b[2mrsle\x1b[0m" in result.output
+
+    def test_prefix_computed_against_all_tasks_including_done(self, runner, isolated_storage):
+        """A done task (not displayed) must still influence prefix lengths."""
+        open_task = Task(message="Open", id="aaa0001", created_at="2026-01-01T10:00:00")
+        done_task = Task(message="Done", id="aab0001", created_at="2026-01-01T10:00:01",
+                         status=TaskStatus.DONE)
+        st.save_tasks([open_task, done_task])
+        result = runner.invoke(main, ["list"], color=True)
+        # Only open_task is displayed, but done_task's id starts with 'aa' too,
+        # so the minimum unique prefix for open_task is 3 ("aaa"), not 1.
+        assert "aaa" in result.output
+        assert "\x1b[2m0001\x1b[0m" in result.output
+
+    def test_no_color_output_still_contains_id(self, runner, isolated_storage):
+        """Without color, the plain ID is still shown."""
+        task = Task(message="Plain", id="abc1234", created_at="2026-01-01T10:00:00")
+        st.save_tasks([task])
+        result = runner.invoke(main, ["list"])
+        assert "abc1234" in result.output
