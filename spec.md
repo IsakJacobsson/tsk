@@ -133,28 +133,28 @@ Tasks are stored as a Markdown file grouped under day headings:
 ```markdown
 # Tasks
 
-## Monday 2026-03-02
-
-- [ ] Buy groceries
-  id: a3f8c01
-  created_at: 2026-03-02T10:30:00.000000
-  status: open
-
-- [x] Call the plumber
-  id: b7c2e90
-  created_at: 2026-03-02T08:00:00.000000
-  status: done
-
 ## Sunday 2026-03-01
 
 - [-] Fix the doorbell
   id: e1b9d44
   created_at: 2026-03-01T11:15:00.000000
   status: wontdo
+
+## Monday 2026-03-02
+
+- [x] Call the plumber
+  id: b7c2e90
+  created_at: 2026-03-02T08:00:00.000000
+  status: done
+
+- [ ] Buy groceries
+  id: a3f8c01
+  created_at: 2026-03-02T10:30:00.000000
+  status: open
 ```
 
 **Heading format:** `## <Weekday> <YYYY-MM-DD>` (e.g. `## Monday 2026-03-02`).  
-Tasks whose `created_at` cannot be parsed are placed under `## Unknown` at the end.
+Day groups are sorted **chronologically ascending** (oldest date first). Tasks whose `created_at` cannot be parsed are placed under `## Unknown` at the end.
 
 **Checkbox markers:**
 
@@ -212,6 +212,9 @@ Sets `status = WONTDO` on the uniquely matched task, saves, and returns it. Retu
 #### `delete_task(partial_id: str) -> Task | None`
 Removes the uniquely matched task from the list, saves, and returns the deleted task. Returns `None` if not found or ambiguous.
 
+#### `edit_task(partial_id: str, new_message: str) -> Task | None`
+Updates the `message` of the uniquely matched task, saves, and returns the updated task. Preserves `id`, `created_at`, and `status` unchanged. Returns `None` if not found or ambiguous.
+
 ---
 
 ## 6. CLI (`task_cli/cli.py`)
@@ -245,15 +248,15 @@ Added task [a3f8c01] Buy groceries
 
 #### `tsk list [--all]`
 
-Displays tasks sorted by `created_at`, grouped by date.
+Displays tasks sorted by `created_at` ascending, grouped by date.
 
 ```
 $ tsk list
-2026-03-02
-  [ ] a3f8c01  Buy groceries
-
 2026-03-01
   [ ] b7c2e90  Call the dentist
+
+2026-03-02
+  [ ] a3f8c01  Buy groceries
 ```
 
 - Without `--all`: only `open` tasks are shown.
@@ -429,11 +432,11 @@ All tests should always be run with command: `tox`.
 envlist = py
 
 [testenv]
+extras = dev
 commands = pytest
 ```
 
 - `extras = dev` installs the package together with the `[dev]` optional dependencies (pytest) into the isolated tox virtualenv.
-- `{posargs}` allows passing extra arguments to pytest (e.g. `tox -- -k test_add`).
 - `tox` is **not** listed as a project dependency; it is a developer tool installed separately (`pip install tox` or `pipx install tox`).
 
 
@@ -470,5 +473,5 @@ def test_add_command(isolated_storage):
 | Module        | What to test                                                              |
 |---------------|---------------------------------------------------------------------------|
 | `models.py`   | `generate_id` determinism; `Task.__post_init__` auto-fill; status coercion; `completed` property; `to_dict` / `from_dict` round-trip |
-| `storage.py`  | `load_tasks` parses all status markers; `save_tasks` round-trip; `add_task` ID collision handling; `find_task_by_id` prefix matching; `complete_task`, `wont_do_task`, `delete_task` mutations |
+| `storage.py`  | `load_tasks` parses all status markers; `save_tasks` round-trip; `add_task` ID collision handling; `find_task_by_id` prefix matching; `complete_task`, `wont_do_task`, `delete_task`, `edit_task` mutations |
 | `cli.py`      | Each command's happy path and error path (no match, ambiguous ID, delete confirmation) |
